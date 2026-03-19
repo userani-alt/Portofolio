@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gen Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #050a18;
+            --accent-blue: #3b82f6;
+            --card-bg: rgba(255, 255, 255, 0.05);
+        }
+
+        body {
+            background-color: var(--bg-deep);
+            color: white;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* --- BACKGROUND DIPERBAGUS (ANIMATED) --- */
+        .bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(-45deg, #050a18, #0f172a, #111827, #1e1b4b);
+            background-size: 400% 400%;
+            animation: gradientBG 15s ease infinite;
+        }
+
+        .bg-canvas::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.15) 0%, transparent 60%);
+            animation: pulseGlow 8s infinite alternate ease-in-out;
+        }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(0.9); opacity: 0.5; }
+            100% { transform: scale(1.2); opacity: 0.9; }
+        }
+
+        /* Welcome Overlay */
+        #welcome-overlay {
+            position: fixed;
+            inset: 0;
+            background: #050a18;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: opacity 0.8s ease, visibility 0.8s;
+        }
+
+        .welcome-text {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: 4px;
+            color: #60a5fa;
+            animation: pulse-text 2s infinite;
+            text-align: center;
+        }
+
+        @keyframes pulse-text {
+            0%, 100% { opacity: 0.4; transform: scale(0.95); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Main Content Layout */
+        .main-wrapper {
+            display: none; 
+            opacity: 0;
+            transition: opacity 1s ease;
+            padding: 20px 0 60px 0;
+            width: 100%;
+        }
+
+        .container-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            width: 90%;
+            max-width: 1000px;
+            margin: 0 auto;
+            justify-items: center;
+        }
+
+        /* --- DESKTOP LAYOUT (KIRI & KANAN) --- */
+        @media (min-width: 768px) {
+            .container-grid { 
+                grid-template-columns: 1fr 1fr; 
+                align-items: start; /* Mencegah kartu memanjang jika tingginya berbeda */
+            }
+            .full-row { grid-column: span 2; }
+            
+            /* Mengatur Posisi Spesifik di Desktop */
+            .card-profile { grid-column: 1; grid-row: 1; }
+            .card-music { grid-column: 1; grid-row: 2; }
+            .card-about { grid-column: 2; grid-row: 1; }
+            .card-lang { grid-column: 2; grid-row: 2; }
+            .card-proyek { grid-column: 1 / -1; grid-row: 3; } /* Membentang penuh di bawah */
+        }
+
+        .glass-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            width: 100%;
+            max-width: 450px; /* Di desktop akan menyesuaikan kolom, di mobile max 450px */
+            padding: 24px;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            height: fit-content;
+        }
+
+        @media (min-width: 768px) {
+            .glass-card { max-width: 100%; } /* Agar mengisi kolom penuh di desktop */
+            .card-proyek { max-width: 920px; margin: 0 auto; } /* Membatasi lebar maksimum proyek di tengah */
+        }
+
+        .text-gen {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(to bottom, #60a5fa, #2563eb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1;
+            margin-bottom: 5px;
+        }
+
+        .username { color: #94a3b8; font-size: 1rem; font-weight: 500; opacity: 0.8; }
+        .info-sub { font-size: 0.75rem; color: #64748b; margin-top: 5px; }
+
+        .typewriter-box {
+            margin-top: 25px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: #e2e8f0;
+            min-height: 45px;
+            line-height: 1.5;
+        }
+
+        .pfp-container {
+            position: absolute;
+            right: 20px;
+            top: 40px;
+            width: 80px;
+            height: 80px;
+            cursor: pointer;
+            z-index: 20;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @media (min-width: 400px) {
+            .pfp-container { width: 100px; height: 100px; right: 30px; top: 50px; }
+        }
+
+        .pfp-container:hover { transform: scale(1.1) rotate(5deg); }
+        .pfp-img {
+            width: 100%; height: 100%; border-radius: 50%; object-fit: cover;
+            border: 3px solid rgba(59, 130, 246, 0.5);
+            animation: slow-spin 12s linear infinite;
+        }
+
+        @keyframes slow-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .list-item { margin-bottom: 12px; }
+        .list-label { display: block; font-size: 0.7rem; text-transform: uppercase; color: var(--accent-blue); letter-spacing: 1px; font-weight: 800; }
+        .list-value { font-size: 0.9rem; color: #cbd5e1; }
+
+        .orbit-wrap {
+            height: 250px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .orbit-circle { position: absolute; width: 180px; height: 180px; border: 1px dashed rgba(255,255,255,0.1); border-radius: 50%; }
+        .center-box { width: 60px; height: 60px; background: #000; border: 2px solid #4ade80; border-radius: 12px; z-index: 5; overflow: hidden; }
+        .center-box img { width: 100%; height: 100%; object-fit: cover; }
+        .orb-icon {
+            position: absolute; width: 40px; height: 40px; background: #111827; border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 50%; display: flex; justify-content: center; align-items: center;
+            animation: orbit-anim 15s linear infinite; overflow: hidden;
+        }
+        .orb-icon img { width: 100%; height: 100%; object-fit: cover; }
+
+        @keyframes orbit-anim {
+            from { transform: rotate(0deg) translateX(90px) rotate(0deg); }
+            to { transform: rotate(360deg) translateX(90px) rotate(-360deg); }
+        }
+
+        .o-1 { animation-delay: 0s; } .o-2 { animation-delay: -3s; } .o-3 { animation-delay: -6s; } .o-4 { animation-delay: -9s; } .o-5 { animation-delay: -12s; }
+
+        .cursor { display: inline-block; width: 2px; height: 15px; background: var(--accent-blue); margin-left: 2px; animation: blink 0.8s infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* --- SOUND WAVE VISUALIZER --- */
+        .sound-wave {
+            position: absolute;
+            top: 20px;
+            left: 24px;
+            display: flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 20px;
+        }
+        .wave-bar {
+            width: 3px;
+            background: var(--accent-blue);
+            height: 100%;
+            border-radius: 10px;
+            animation: wave-anim 1s ease-in-out infinite;
+            animation-play-state: paused;
+        }
+        .bar-1 { height: 40%; animation-delay: 0.1s; }
+        .bar-2 { height: 80%; animation-delay: 0.3s; }
+        .bar-3 { height: 60%; animation-delay: 0.2s; }
+        .bar-4 { height: 90%; animation-delay: 0.4s; }
+        .bar-5 { height: 50%; animation-delay: 0.1s; }
+        @keyframes wave-anim {
+            0%, 100% { transform: scaleY(0.5); opacity: 0.5; }
+            50% { transform: scaleY(1.5); opacity: 1; }
+        }
+        .wave-active .wave-bar { animation-play-state: running; }
+
+        /* --- MUSIC PLAYER STYLE --- */
+        .music-player { text-align: center; padding: 10px 0; }
+        .vinyl-container {
+            width: 180px; height: 180px; margin: 0 auto 15px;
+            border-radius: 50%; overflow: hidden;
+            border: 6px solid rgba(255,255,255,0.1);
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            cursor: grab;
+            transform-origin: center center;
+            touch-action: none;
+        }
+        .vinyl-container:active { cursor: grabbing; }
+        .vinyl-container img { width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+        
+        .music-controls { display: flex; align-items: center; justify-content: center; gap: 15px; margin-top: 10px; }
+        .btn-control { width: 24px; height: 24px; cursor: pointer; transition: transform 0.2s; opacity: 0.8; }
+        .btn-control:hover { opacity: 1; }
+        .btn-control:active { transform: scale(0.9); }
+        .play-btn { width: 32px; height: 32px; }
+
+        .seek-container { display: flex; align-items: center; gap: 10px; width: 90%; margin: 15px auto 5px; }
+        .time-stamp { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: #64748b; min-width: 35px; }
+        
+        .seek-bar {
+            flex-grow: 1; height: 4px;
+            background: rgba(255,255,255,0.1); border-radius: 2px;
+            position: relative; cursor: pointer;
+            touch-action: none; 
+        }
+
+        .seek-fill { 
+            height: 100%; background: var(--accent-blue); width: 0%; border-radius: 2px; 
+            position: relative; 
+        }
+        .seek-fill::after {
+            content: '';
+            position: absolute;
+            right: -6px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            background: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+            transition: transform 0.15s ease;
+        }
+        .seek-bar:hover .seek-fill::after,
+        .seek-bar:active .seek-fill::after {
+            transform: translateY(-50%) scale(1.3);
+        }
+
+        /* Footer & Folder */
+        .folder-gen {
+            font-size: 6rem; display: block; margin-bottom: 20px;
+            animation: folder-glow 2s infinite ease-in-out;
+            filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.4));
+        }
+        @keyframes folder-glow {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.1); opacity: 1; filter: drop-shadow(0 0 25px rgba(59, 130, 246, 0.8)); }
+        }
+        footer { width: 100%; text-align: center; padding: 40px 0; }
+        
+        /* -- Tautan Sosial Media -- */
+        .social-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .yt-link {
+            display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 0, 0, 0.1);
+            border: 1px solid rgba(255, 0, 0, 0.2); padding: 8px 16px; border-radius: 12px;
+            color: #ff4d4d; font-weight: 600; transition: all 0.3s ease;
+        }
+        .fb-link {
+            display: inline-flex; align-items: center; gap: 8px; background: rgba(24, 119, 242, 0.1);
+            border: 1px solid rgba(24, 119, 242, 0.2); padding: 8px 16px; border-radius: 12px;
+            color: #1877F2; font-weight: 600; transition: all 0.3s ease;
+        }
+        .ig-link {
+            display: inline-flex; align-items: center; gap: 8px; background: rgba(225, 48, 108, 0.1);
+            border: 1px solid rgba(225, 48, 108, 0.2); padding: 8px 16px; border-radius: 12px;
+            color: #E1306C; font-weight: 600; transition: all 0.3s ease;
+        }
+        .gh-link {
+            display: inline-flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2); padding: 8px 16px; border-radius: 12px;
+            color: #ffffff; font-weight: 600; transition: all 0.3s ease;
+        }
+        .yt-link:hover, .fb-link:hover, .ig-link:hover, .gh-link:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.2);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="bg-canvas"></div>
+
+    <audio id="bgm"></audio>
+
+    <div id="welcome-overlay" onclick="startPorto()">
+        <div class="welcome-text">WELCOME (AFTER AFKAR)</div>
+        <div class="text-xs text-slate-500 mt-4">[ KLIK DI MANA SAJA UNTUK MASUK ]</div>
+    </div>
+
+    <div class="main-wrapper" id="main-content">
+        <div class="container-grid">
+            
+            <div class="glass-card card-profile">
+                <h1 class="text-gen">Gen</h1>
+                <div class="username">@Patipuh_prop5</div>
+                <div class="info-sub">
+                    From: Indonesia 🇮🇩<br>
+                    <span id="time-display">[00.00.00] WIB</span>
+                </div>
+                <div class="typewriter-box">
+                    <span id="type-text"></span><span class="cursor"></span>
+                </div>
+                <a href="https://discord.com/users/1362422010483048489" target="_blank" class="pfp-container">
+                    <img src="profil.jpeg" alt="PFP" class="pfp-img" onerror="this.src='https://api.dicebear.com/7.x/pixel-art/svg?seed=Gen'">
+                </a>
+            </div>
+
+            <div class="glass-card card-about">
+                <h2 class="text-xs font-extrabold uppercase tracking-widest text-slate-500 mb-6 text-center">Section About Me</h2>
+                <div class="list-item"><span class="list-label">Food</span><span class="list-value">Clean, halal and deliciouso</span></div>
+                <div class="list-item"><span class="list-label">Game</span><span class="list-value">Mobile Legends (painful game)</span></div>
+                <div class="list-item"><span class="list-label">Hobby</span><span class="list-value">Coding Stuff</span></div>
+                <div class="list-item"><span class="list-label">Character</span><span class="list-value text-blue-400 font-bold">Asagiri Gen</span></div>
+                <div class="mt-6 p-4 bg-white/5 rounded-xl border-l-2 border-blue-500 italic text-sm text-slate-400">
+                    "Aku hanya manusia biasa yang sangat sangatlah biasa."
+                </div>
+            </div>
+
+            <div class="glass-card card-lang">
+                <h2 class="text-xs font-extrabold uppercase tracking-widest text-slate-500 mb-2 text-center">Language i use</h2>
+                <div class="orbit-wrap">
+                    <div class="orbit-circle"></div>
+                    <div class="center-box">
+                        <img src="Termux.jpeg" alt="Termux" onerror="this.src='https://cdn-icons-png.flaticon.com/512/906/906334.png'">
+                    </div>
+                    <div class="orb-icon o-1"><img src="https://cdn-icons-png.flaticon.com/512/732/732212.png" alt="HTML"></div>
+                    <div class="orb-icon o-2"><img src="Python.jpeg" alt="Python" onerror="this.src='https://cdn-icons-png.flaticon.com/512/5968/5968350.png'"></div>
+                    <div class="orb-icon o-3"><img src="C#.jpeg" alt="C#" onerror="this.src='https://cdn-icons-png.flaticon.com/512/6132/6132221.png'"></div>
+                    <div class="orb-icon o-4"><img src="https://cdn-icons-png.flaticon.com/512/5968/5968292.png" alt="JS"></div>
+                    <div class="orb-icon o-5"><img src="https://cdn-icons-png.flaticon.com/512/732/732190.png" alt="CSS"></div>
+                </div>
+            </div>
+
+            <div class="glass-card card-music">
+                <div class="sound-wave" id="visualizer">
+                    <div class="wave-bar bar-1"></div>
+                    <div class="wave-bar bar-2"></div>
+                    <div class="wave-bar bar-3"></div>
+                    <div class="wave-bar bar-4"></div>
+                    <div class="wave-bar bar-5"></div>
+                </div>
+                <h2 class="text-xs font-extrabold uppercase tracking-widest text-slate-500 mb-4 text-center"></h2>
+                <div class="music-player">
+                    <div id="vinyl-disk" class="vinyl-container">
+                        <img src="Dc.png" alt="Vinyl" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3284/3284955.png'">
+                    </div>
+                    <div class="text-sm font-bold text-blue-400 mb-2" id="song-title">Everybody Wants to Rule the World - Tears for Fears</div>
+                    
+                    <div class="seek-container">
+                        <span id="current-time" class="time-stamp">0:00</span>
+                        <div id="seek-bar" class="seek-bar">
+                            <div id="progress" class="seek-fill"></div>
+                        </div>
+                        <span id="total-duration" class="time-stamp">0:00</span>
+                    </div>
+
+                    <div class="music-controls">
+                        <img src="https://cdn-icons-png.flaticon.com/512/254/254437.png" class="btn-control" style="filter:invert(1)" onclick="prevSong()" alt="prev">
+                        <img id="btn-play-pause" src="play.png" class="btn-control play-btn" onclick="togglePlay()" alt="play/pause">
+                        <img src="https://cdn-icons-png.flaticon.com/512/254/254428.png" class="btn-control" style="filter:invert(1)" onclick="nextSong()" alt="next">
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card full-row card-proyek">
+                <h2 class="text-xs font-extrabold uppercase tracking-widest text-slate-500 mb-2 text-center">My Proyek</h2>
+                <div class="flex flex-col items-center py-10">
+                    <span class="folder-gen">📂</span>
+                    <div class="text-xs font-mono opacity-40">No projects yet, except this porto.</div>
+                </div>
+            </div>
+
+        </div>
+
+        <footer>
+            <div class="social-wrapper">
+                <a href="https://youtu.be/iik25wqIuFo?si=_xbgvnDgi2kjqO0c" target="_blank" class="yt-link">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/></svg>
+                    Youtube
+                </a>
+                <a href="https://www.facebook.com/VideosRodrigosLyricsSub/videos/rick-astley-never-gonna-give-you-up-official-video/442898693419478/&ved=2ahUKEwjeta-S4auTAxVZoWMGHR0aO6sQwqsBegQIDxAB&usg=AOvVaw0axJ9OuU96FrSbzmxQmonY" target="_blank" class="fb-link">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M9 8h-3v4h3v12h5v-12h3.642l.358-4h-4v-1.667c0-.955.192-1.333 1.115-1.333h2.885v-5h-3.808c-3.596 0-5.192 1.583-5.192 4.615v3.385z"/></svg>
+                    Facebook
+                </a>
+                <a href="https://www.instagram.com/p/BgSlRglAKBn/?igsh=MXZvdjdtNGRlcXBlcw==" target="_blank" class="ig-link">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+                    Instagram
+                </a>
+                <a href="https://rroll.derlin.ch/" target="_blank" class="gh-link">
+                    <svg width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>
+                    GitHub
+                </a>
+            </div>
+            
+            <div class="text-sm font-bold text-slate-400">2026 © GEN,I don't know, Afkar is always stuff with stuff and other stuff</div>
+        </footer>
+    </div>
+
+    <script>
+        const songs = ["Backsound1.mp3", "Backsound2.mp3", "Backsound3.mp3"];
+        const songTitles = [
+            "Everybody Wants to Rule the World - Tears for Fears",
+            "What You Won't Do For Love - Bobby Caldwell",
+            "Put Your Head On My Shoulder - Paul Anka"
+        ];
+        
+        let currentIdx = 0;
+        const audio = document.getElementById('bgm');
+        const btnPlay = document.getElementById('btn-play-pause');
+        const disk = document.getElementById('vinyl-disk');
+        const title = document.getElementById('song-title');
+        const progress = document.getElementById('progress');
+        const currTimeText = document.getElementById('current-time');
+        const totalDurationText = document.getElementById('total-duration');
+        const visualizer = document.getElementById('visualizer');
+        const seekBar = document.getElementById('seek-bar');
+        let isDraggingSeek = false;
+
+        function setPlayIcon() {
+            btnPlay.style.filter = 'none';
+            btnPlay.src = "play.png";
+            btnPlay.onerror = function() {
+                this.onerror = null; 
+                this.src = 'https://cdn-icons-png.flaticon.com/512/0/375.png'; 
+                this.style.filter = 'invert(1)';
+            };
+        }
+
+        function setPauseIcon() {
+            btnPlay.style.filter = 'none';
+            btnPlay.src = "pause.png";
+            btnPlay.onerror = function() {
+                this.onerror = null;
+                this.src = 'https://cdn-icons-png.flaticon.com/512/16/16427.png'; 
+                this.style.filter = 'invert(1)';
+            };
+        }
+
+        setPlayIcon();
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return "0:00";
+            const min = Math.floor(seconds / 60);
+            const sec = Math.floor(seconds % 60);
+            return min + ":" + (sec < 10 ? "0" + sec : sec);
+        }
+
+        function loadSong(idx) {
+            audio.src = songs[idx];
+            title.textContent = songTitles[idx];
+            audio.load();
+        }
+
+        function togglePlay() {
+            if (audio.paused) {
+                audio.play();
+                setPauseIcon();
+                visualizer.classList.add('wave-active');
+            } else {
+                audio.pause();
+                setPlayIcon();
+                visualizer.classList.remove('wave-active');
+            }
+        }
+
+        function nextSong() {
+            currentIdx = (currentIdx + 1) % songs.length;
+            loadSong(currentIdx);
+            audio.play();
+            setPauseIcon();
+            visualizer.classList.add('wave-active');
+        }
+
+        function prevSong() {
+            currentIdx = (currentIdx - 1 + songs.length) % songs.length;
+            loadSong(currentIdx);
+            audio.play();
+            setPauseIcon();
+            visualizer.classList.add('wave-active');
+        }
+
+        audio.ontimeupdate = () => {
+            if (!isDraggingSeek) {
+                const pct = (audio.currentTime / audio.duration) * 100;
+                progress.style.width = pct + "%";
+                currTimeText.textContent = formatTime(audio.currentTime);
+            }
+        };
+
+        audio.onloadedmetadata = () => {
+            totalDurationText.textContent = formatTime(audio.duration);
+        };
+
+        audio.onended = nextSong;
+
+        function updateSeekPosition(e) {
+            const rect = seekBar.getBoundingClientRect();
+            let clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            let x = clientX - rect.left;
+            if (x < 0) x = 0;
+            if (x > rect.width) x = rect.width;
+            const pct = (x / rect.width) * 100;
+            progress.style.width = pct + "%";
+            if (audio.duration) {
+                const dragTime = (x / rect.width) * audio.duration;
+                currTimeText.textContent = formatTime(dragTime);
+            }
+        }
+
+        function startSeekDrag(e) {
+            isDraggingSeek = true;
+            updateSeekPosition(e); 
+            document.addEventListener('mousemove', seekDrag);
+            document.addEventListener('touchmove', seekDrag, { passive: false });
+            document.addEventListener('mouseup', endSeekDrag);
+            document.addEventListener('touchend', endSeekDrag);
+        }
+
+        function seekDrag(e) {
+            if (!isDraggingSeek) return;
+            e.preventDefault(); 
+            updateSeekPosition(e);
+        }
+
+        function endSeekDrag(e) {
+            if (!isDraggingSeek) return;
+            isDraggingSeek = false;
+            const rect = seekBar.getBoundingClientRect();
+            let clientX = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+            let x = clientX - rect.left;
+            if (x < 0) x = 0;
+            if (x > rect.width) x = rect.width;
+            if (audio.duration) {
+                audio.currentTime = (x / rect.width) * audio.duration;
+            }
+            document.removeEventListener('mousemove', seekDrag);
+            document.removeEventListener('touchmove', seekDrag);
+            document.removeEventListener('mouseup', endSeekDrag);
+            document.removeEventListener('touchend', endSeekDrag);
+        }
+
+        seekBar.addEventListener('mousedown', startSeekDrag);
+        seekBar.addEventListener('touchstart', startSeekDrag, { passive: false });
+
+        function startPorto() {
+            loadSong(currentIdx);
+            audio.play().then(() => {
+                setPauseIcon();
+                visualizer.classList.add('wave-active');
+            }).catch(() => {});
+            const overlay = document.getElementById('welcome-overlay');
+            const main = document.getElementById('main-content');
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                main.style.display = 'block';
+                setTimeout(() => { main.style.opacity = '1'; typingEffect(); }, 50);
+            }, 800);
+        }
+
+        let currentRotation = 0;
+        let isDragging = false;
+        let startAngle = 0;
+        let lastRotation = 0;
+
+        function getAngle(e) {
+            const rect = disk.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return Math.atan2(clientY - centerY, clientX - centerX) * (180 / Math.PI);
+        }
+
+        disk.addEventListener('mousedown', startDrag);
+        disk.addEventListener('touchstart', startDrag, {passive: false});
+
+        function startDrag(e) {
+            isDragging = true;
+            startAngle = getAngle(e);
+            lastRotation = currentRotation;
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('touchmove', drag, {passive: false});
+            document.addEventListener('mouseup', endDrag);
+            document.addEventListener('touchend', endDrag);
+        }
+
+        function drag(e) {
+            if (!isDragging) return;
+            e.preventDefault(); 
+            const angle = getAngle(e);
+            let delta = angle - startAngle;
+            if (delta > 180) delta -= 360;
+            if (delta < -180) delta += 360;
+            currentRotation = lastRotation + delta;
+            disk.style.transform = `rotate(${currentRotation}deg)`;
+            if(audio.duration) {
+                let targetTime = audio.currentTime + (delta * 0.03); 
+                if(targetTime < 0) targetTime = 0;
+                if(targetTime > audio.duration) targetTime = audio.duration;
+                audio.currentTime = targetTime;
+            }
+            startAngle = angle;
+            lastRotation = currentRotation;
+        }
+
+        function endDrag() {
+            isDragging = false;
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('touchmove', drag);
+            document.removeEventListener('mouseup', endDrag);
+            document.removeEventListener('touchend', endDrag);
+        }
+
+        function spinDiskAuto() {
+            if (!isDragging && !audio.paused) {
+                currentRotation += 0.6; 
+                disk.style.transform = `rotate(${currentRotation}deg)`;
+            }
+            requestAnimationFrame(spinDiskAuto);
+        }
+        spinDiskAuto(); 
+
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('time-display').textContent = `[${String(now.getHours()).padStart(2, '0')}.${String(now.getMinutes()).padStart(2, '0')}.${String(now.getSeconds()).padStart(2, '0')}] WIB`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        const typeTarget = document.getElementById('type-text');
+        const textArray = ["membuat website itu sulit boss.", "nyontek afkar dikit", "bisa any stuff kek afkar"];
+        let textIndex = 0, charIndex = 0, isDeleting = false;
+
+        function typingEffect() {
+            if(!typeTarget) return;
+            const currentText = textArray[textIndex];
+            if (!isDeleting && charIndex <= currentText.length) {
+                typeTarget.textContent = currentText.substring(0, charIndex);
+                charIndex++;
+                setTimeout(typingEffect, 100);
+            } else if (isDeleting && charIndex >= 0) {
+                typeTarget.textContent = currentText.substring(0, charIndex);
+                charIndex--;
+                setTimeout(typingEffect, 50);
+            } else if (!isDeleting && charIndex > currentText.length) {
+                isDeleting = true;
+                setTimeout(typingEffect, 3000);
+            } else {
+                isDeleting = false;
+                charIndex = 0;
+                textIndex = (textIndex + 1) % textArray.length;
+                setTimeout(typingEffect, 500);
+            }
+        }
+    </script>
+</body>
+</html>
